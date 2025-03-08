@@ -8,9 +8,9 @@ function App() {
   return (
     <BrowserRouter> {/* ✅ This is the only Router in the app */}
       <Routes>
-        <Route path="/" element={<UserComponent />} />
+        <Route path="/" element={<LoginPage />} />
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/admin" element={<LoginPage/>} /> {/* New Route */}
+        <Route path="/user" element={<UserComponent />} /> {/* New Route */}
       </Routes>
     </BrowserRouter>
   );
