@@ -4,7 +4,7 @@ const Footer = () => {
   return (
     <footer className="bg-purple-800 text-white text-center p-4 mt-">
       <div className="container mx-auto flex flex-col items-center">
-        <p className="mb-2">&copy; {new Date().getFullYear()} Your Company. All rights reserved.</p>
+        <p className="mb-2">&copy; {new Date().getFullYear()} Ballu's Kadai . All rights reserved.</p>
         
         {/* Social Media Links */}
         <div className="flex gap-4">
