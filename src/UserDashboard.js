@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "./firebase";
 import Footer from "./Footer";
@@ -6,31 +6,31 @@ import Main from "./UserMain";
 import Navbar from "./UserNavbar";
 import Sidebar from "./UserSidebar";
 import { useNavigate } from "react-router-dom";
+import MobileCategoryView from "./MobileCategoryView";
 
 const UserDashboard = () => {
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
   const navigate = useNavigate();
   
   useEffect(() => {
     fetchCategories();
     
-    const handleResize = () => {
-      if (window.innerWidth < 1024) {
-        setSidebarOpen(false);
-      } else {
-        setSidebarOpen(true);
-      }
+    // Check if device is mobile
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth < 768);
     };
     
-    handleResize();
-    window.addEventListener('resize', handleResize);
+    // Initial check
+    checkIfMobile();
     
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
+    // Add resize listener
+    window.addEventListener('resize', checkIfMobile);
+    
+    // Clean up
+    return () => window.removeEventListener('resize', checkIfMobile);
   }, []);
   
   const fetchCategories = async () => {
@@ -43,8 +43,10 @@ const UserDashboard = () => {
       }));
       setCategories(categoriesData);
       
-      if (categoriesData.length > 0 && !selectedCategory) {
-        setSelectedCategory(categoriesData[0]);
+      // Set the highest ranked category as default selected
+      if (categoriesData.length > 0) {
+        const sortedCategories = [...categoriesData].sort((a, b) => b.rank - a.rank);
+        setSelectedCategory(sortedCategories[0]);
       }
     } catch (error) {
       console.error("Error fetching categories:", error);
@@ -58,74 +60,56 @@ const UserDashboard = () => {
     navigate("/login");
   };
   
-  const toggleSidebar = () => {
-    setSidebarOpen(!isSidebarOpen);
+  const handleSelectCategory = (category) => {
+    setSelectedCategory(category);
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50">
-      <Navbar 
-        onLogout={handleLogout} 
-        toggleSidebar={toggleSidebar}
-        isSidebarOpen={isSidebarOpen}
-      />
+    <div className="flex flex-col min-h-screen bg-gray-50">
+      {/* Always show navbar */}
+      <Navbar onLogout={handleLogout} />
       
-      <div className="flex flex-grow relative">
-        {/* Sidebar */}
-        <div 
-          className={`
-            fixed lg:relative z-40 h-[calc(100vh-4rem)] overflow-hidden
-            transition-all duration-300 ease-in-out
-            ${isSidebarOpen ? 'translate-x-0 w-64' : '-translate-x-full w-0 lg:w-16'}
-            lg:translate-x-0
-          `}
-        >
-          <div className={`
-            h-full w-64 bg-white shadow-lg rounded-r-xl
-            border-r border-gray-100
-            transition-all duration-300
-            ${isSidebarOpen ? 'translate-x-0' : 'lg:-translate-x-48'}
-          `}>
-            <Sidebar
-              categories={categories}
-              onSelectCategory={setSelectedCategory}
-              selectedCategory={selectedCategory}
-              isLoading={isLoading}
-              isCollapsed={!isSidebarOpen}
-            />
+      {/* Mobile View */}
+      {isMobile && (
+        <div className="flex-1">
+          <MobileCategoryView 
+            categories={categories}
+            onSelectCategory={handleSelectCategory}
+            selectedCategory={selectedCategory}
+          />
+          <div className="p-4">
+            <Main category={selectedCategory} />
           </div>
         </div>
-        
-        {/* Main Content */}
-        <main className={`
-          flex-grow transition-all duration-300 ease-in-out
-          ${isSidebarOpen ? 'lg:ml-0' : 'ml-0 lg:ml-16'}
-          p-4 md:p-6 lg:p-8 relative z-10
-        `}>
-          <div className="bg-white rounded-xl shadow-sm p-6 min-h-[calc(100vh-10rem)]">
-            {isLoading ? (
-              <div className="flex items-center justify-center h-64">
-                <div className="relative">
-                  <div className="w-12 h-12 rounded-full border-t-4 border-r-4 border-indigo-600 animate-spin"></div>
-                  <div className="w-12 h-12 rounded-full border-b-4 border-l-4 border-purple-500 animate-spin absolute top-0 animate-[spin_1s_linear_infinite_0.2s]"></div>
+      )}
+      
+      {/* Desktop View */}
+      {!isMobile && (
+        <div className="flex flex-1 overflow-hidden">
+          <Sidebar
+            categories={categories}
+            onSelectCategory={handleSelectCategory}
+            selectedCategory={selectedCategory}
+            isLoading={isLoading}
+          />
+          <main className="flex-1 overflow-y-auto p-6">
+            <div className="bg-white rounded-xl shadow-sm p-6 min-h-[calc(100vh-10rem)]">
+              {isLoading ? (
+                <div className="flex items-center justify-center h-64">
+                  <div className="relative">
+                    <div className="w-12 h-12 rounded-full border-t-4 border-r-4 border-indigo-600 animate-spin"></div>
+                    <div className="w-12 h-12 rounded-full border-b-4 border-l-4 border-purple-500 animate-spin absolute top-0 animate-[spin_1s_linear_infinite_0.2s]"></div>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <Main category={selectedCategory} />
-            )}
-          </div>
-        </main>
-      </div>
+              ) : (
+                <Main category={selectedCategory} />
+              )}
+            </div>
+          </main>
+        </div>
+      )}
       
       <Footer />
-      
-      {/* Backdrop overlay for mobile when sidebar is open */}
-      {isSidebarOpen && (
-        <div 
-          className="lg:hidden fixed inset-0 bg-gray-900 bg-opacity-50 backdrop-blur-sm z-30 transition-all duration-300"
-          onClick={() => setSidebarOpen(false)}
-        ></div>
-      )}
     </div>
   );
 };

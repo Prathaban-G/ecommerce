@@ -45,7 +45,7 @@ const Navbar = ({ toggleSidebar, isSidebarOpen }) => {
 
 
           <h1 className="text-2xl md:text-3xl font-extrabold tracking-wider text-white transition-all duration-300 transform hover:scale-105">
-            Ballu's <span className="text-purple-300">Kadai</span>
+            Kid's <span className="text-purple-300">Kadai</span>
           </h1>
         </div>
 

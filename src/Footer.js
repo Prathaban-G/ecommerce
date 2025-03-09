@@ -1,21 +1,19 @@
-import { Facebook, Twitter, Instagram } from "lucide-react"; // Install lucide-react if not already
 
+import { FaInstagram, FaFacebook, FaWhatsapp } from "react-icons/fa";
 const Footer = () => {
   return (
     <footer className="bg-purple-800 text-white text-center p-4 mt-">
       <div className="container mx-auto flex flex-col items-center">
-        <p className="mb-2">&copy; {new Date().getFullYear()} Ballu's Kadai . All rights reserved.</p>
+        <p className="mb-2">&copy; {new Date().getFullYear()} Kid's Kadai . All rights reserved.</p>
         
         {/* Social Media Links */}
         <div className="flex gap-4">
-          <a href="https://facebook.com" target="_blank" rel="noopener noreferrer">
-            <Facebook size={20} />
+          <a href="https://www.instagram.com/invites/contact/?utm_source=ig_contact_invite&utm_medium=copy_link&utm_content=l3b6b2h" target="_blank" rel="noopener noreferrer">
+            <FaInstagram size={24} className="hover:text-gray-300 transition-colors duration-300" />
           </a>
-          <a href="https://twitter.com" target="_blank" rel="noopener noreferrer">
-            <Twitter size={20} />
-          </a>
-          <a href="https://instagram.com" target="_blank" rel="noopener noreferrer">
-            <Instagram size={20} />
+         
+          <a href="https://chat.whatsapp.com/BWmlmtKcWGK3ohLwhq3btA" target="_blank" rel="noopener noreferrer">
+            <FaWhatsapp size={24} className="hover:text-gray-300 transition-colors duration-300" />
           </a>
         </div>
       </div>
