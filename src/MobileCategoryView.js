@@ -10,14 +10,20 @@ const MobileCategoryView = ({ categories, onSelectCategory, selectedCategory }) 
   const [searchQuery, setSearchQuery] = useState("");
   const categoryScrollRef = useRef(null);
 
-  useEffect(() => {
-    if (categories.length > 0 && !activeCategory) {
-      // Sort categories by rank and select the highest ranked one by default
-      const sortedCategories = [...categories].sort((a, b) => b.rank - a.rank);
-      setActiveCategory(sortedCategories[0]);
-      fetchCategoryItems(sortedCategories[0]);
-    }
-  }, [categories]);
+// Replace the current useEffect with this:
+useEffect(() => {
+  if (categories.length > 0) {
+    // Sort categories by rank
+    const sortedCategories = [...categories].sort((a, b) => b.rank - a.rank);
+    // Set highest ranked one as active for highlighting purposes
+    setActiveCategory(sortedCategories[0]);
+    
+    // Fetch items for ALL categories
+    sortedCategories.forEach(category => {
+      fetchCategoryItems(category);
+    });
+  }
+}, [categories]);
 
   useEffect(() => {
     if (selectedCategory) {
