@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from './firebase';
 
@@ -9,21 +9,23 @@ const MobileCategoryView = ({ categories, onSelectCategory, selectedCategory }) 
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const categoryScrollRef = useRef(null);
+  // New state for the WhatsApp confirmation modal
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
 
-// Replace the current useEffect with this:
-useEffect(() => {
-  if (categories.length > 0) {
-    // Sort categories by rank
-    const sortedCategories = [...categories].sort((a, b) => b.rank - a.rank);
-    // Set highest ranked one as active for highlighting purposes
-    setActiveCategory(sortedCategories[0]);
-    
-    // Fetch items for ALL categories
-    sortedCategories.forEach(category => {
-      fetchCategoryItems(category);
-    });
-  }
-}, [categories]);
+  useEffect(() => {
+    if (categories.length > 0) {
+      // Sort categories by rank
+      const sortedCategories = [...categories].sort((a, b) => b.rank - a.rank);
+      // Set highest ranked one as active for highlighting purposes
+      setActiveCategory(sortedCategories[0]);
+      
+      // Fetch items for ALL categories
+      sortedCategories.forEach(category => {
+        fetchCategoryItems(category);
+      });
+    }
+  }, [categories]);
 
   useEffect(() => {
     if (selectedCategory) {
@@ -76,6 +78,29 @@ useEffect(() => {
     if (stock === 0) return { text: "Out of Stock", color: "bg-red-500" };
     if (stock < 10) return { text: "Few Left", color: "bg-amber-500" };
     return { text: "In Stock", color: "bg-green-500" };
+  };
+
+  // New function to handle item click and open modal
+  const handleItemClick = (item) => {
+    setSelectedItem(item);
+    setModalOpen(true);
+  };
+
+  // New function to handle WhatsApp redirect
+  const handleWhatsAppRedirect = () => {
+    if (selectedItem) {
+      const whatsappBusinessNumber = '+918056511598';
+      const discountedPrice = selectedItem.price - (selectedItem.price * (selectedItem.discount / 100));
+      const priceMessage = selectedItem.discount > 0
+        ? `The discounted price is ₹${discountedPrice.toFixed(2)} (Original: ₹${selectedItem.price.toFixed(2)})`
+        : `The price is ₹${selectedItem.price.toFixed(2)}`;
+      
+      const message = `Hello, I'm interested in "${selectedItem.name}". ${priceMessage}. Is it available?`;
+      const encodedMessage = encodeURIComponent(message);
+      
+      window.open(`https://wa.me/${whatsappBusinessNumber}?text=${encodedMessage}`, '_blank');
+      setModalOpen(false);
+    }
   };
 
   // Filter categories based on search query
@@ -179,18 +204,7 @@ useEffect(() => {
                         <div
                           key={item.id}
                           className="flex-shrink-0 w-36 bg-white rounded-lg shadow-sm border p-2 relative"
-                          onClick={() => {
-                            // Implement your WhatsApp redirect logic here
-                            const whatsappBusinessNumber = '+918056511598';
-                            const priceMessage = item.discount > 0
-                              ? `The discounted price is ₹${discountedPrice.toFixed(2)} (Original: ₹${item.price.toFixed(2)})`
-                              : `The price is ₹${item.price.toFixed(2)}`;
-                            
-                            const message = `Hello, I'm interested in "${item.name}". ${priceMessage}. Is it available?`;
-                            const encodedMessage = encodeURIComponent(message);
-                            
-                            window.open(`https://wa.me/${whatsappBusinessNumber}?text=${encodedMessage}`, '_blank');
-                          }}
+                          onClick={() => handleItemClick(item)}
                         >
                           {/* Discount & New Tags */}
                           <div className="absolute top-2 left-2 flex flex-col space-y-1 z-10">
@@ -264,6 +278,71 @@ useEffect(() => {
       {isLoading && !Object.keys(categoryItems).length && (
         <div className="flex justify-center items-center py-10">
           <div className="w-10 h-10 border-t-4 border-blue-500 rounded-full animate-spin"></div>
+        </div>
+      )}
+
+      {/* WhatsApp Confirmation Modal */}
+      {modalOpen && selectedItem && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-sm w-full shadow-lg">
+            <div className="flex justify-between items-center p-4 border-b">
+              <h3 className="font-medium">Contact Seller</h3>
+              <button 
+                onClick={() => setModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-4">
+              <div className="flex items-center mb-4">
+                <div className="w-16 h-16 rounded overflow-hidden mr-3 bg-gray-100">
+                  <img 
+                    src={selectedItem.imageUrl} 
+                    alt={selectedItem.name} 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium">{selectedItem.name}</h4>
+                  <div className="mt-1">
+                    {selectedItem.discount > 0 ? (
+                      <div className="flex items-center">
+                        <span className="text-sm font-bold">
+                          ₹{(selectedItem.price - (selectedItem.price * (selectedItem.discount / 100))).toFixed(2)}
+                        </span>
+                        <span className="text-xs line-through text-gray-400 ml-1">
+                          ₹{selectedItem.price.toFixed(2)}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-sm font-bold">₹{selectedItem.price.toFixed(2)}</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              <p className="text-sm text-gray-600 mb-4">
+                You'll be redirected to WhatsApp to chat with the seller about this product.
+              </p>
+              
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setModalOpen(false)}
+                  className="px-4 py-2 border border-gray-300 rounded text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleWhatsAppRedirect}
+                  className="px-4 py-2 bg-green-500 rounded text-sm font-medium text-white hover:bg-green-600"
+                >
+                  Continue to WhatsApp
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

@@ -9,7 +9,7 @@ const Navbar = ({ onLogout }) => {
       <div className="container mx-auto flex justify-between items-center">
         {/* Logo / Title */}
         <h1 className="text-2xl font-bold tracking-tight">
-          <span className="text-purple-300">Kids's</span> Kadai
+          <span className="text-purple-300">Kid's</span> Kadai
         </h1>
 
         {/* Mobile Menu Button */}
