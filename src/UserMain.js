@@ -528,12 +528,7 @@ const UserMain = ({ category }) => {
               
               {/* Action Buttons */}
               <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={() => setModalOpen(false)}
-                  className="px-4 py-2 border border-gray-300 rounded text-sm font-medium text-gray-700 hover:bg-gray-50"
-                >
-                  Modify
-                </button>
+                
                 <button
                   onClick={() => handleWhatsAppRedirect(selectedItem)}
                   className="px-4 py-2 bg-green-500 rounded text-sm font-medium text-white hover:bg-green-600"
