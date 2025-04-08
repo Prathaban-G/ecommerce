@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from './firebase';
-import { ChevronLeft, Filter } from 'lucide-react';
+import { ChevronLeft, Filter, X } from 'lucide-react';
 
 const UserMain = ({ category }) => {
   const [items, setItems] = useState([]);
@@ -14,6 +14,11 @@ const UserMain = ({ category }) => {
   const [maxPrice, setMaxPrice] = useState(10000);
   const [showFilters, setShowFilters] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  
+  // New states for modal
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [selectedItemImage, setSelectedItemImage] = useState('imageUrl'); // Track which image is selected in modal
   
   useEffect(() => {
     // Check if mobile
@@ -75,6 +80,13 @@ const UserMain = ({ category }) => {
     }
   };
   
+  // Function to handle item click and open modal
+  const handleItemClick = (item) => {
+    setSelectedItem(item);
+    setSelectedItemImage('imageUrl'); // Reset to first image when opening modal
+    setModalOpen(true);
+  };
+  
   const handleWhatsAppRedirect = (item) => {
     const whatsappBusinessNumber = '+918056511598'; // Replace with actual WhatsApp Business number
     const discountedPrice = item.price - (item.price * (item.discount / 100));
@@ -86,6 +98,7 @@ const UserMain = ({ category }) => {
     const encodedMessage = encodeURIComponent(message);
     
     window.open(`https://wa.me/${whatsappBusinessNumber}?text=${encodedMessage}`, '_blank');
+    setModalOpen(false);
   };
   
   const getStockLabel = (stock) => {
@@ -178,6 +191,27 @@ const UserMain = ({ category }) => {
           .item-hover-effect:hover {
             transform: translateY(-4px);
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+          }
+          
+          /* Image hover transitions */
+          .image-primary, .image-secondary {
+            transition: opacity 0.3s ease;
+          }
+          
+          .image-primary {
+            opacity: 1;
+          }
+          
+          .image-secondary {
+            opacity: 0;
+          }
+          
+          .item-card:hover .image-primary {
+            opacity: 0;
+          }
+          
+          .item-card:hover .image-secondary {
+            opacity: 1;
           }
         `}
       </style>
@@ -313,11 +347,11 @@ const UserMain = ({ category }) => {
             return (
               <div
                 key={item.id}
-                className={`relative bg-white rounded-lg shadow-md border p-2 ${isMobile ? 'p-2' : 'p-3'} group cursor-pointer item-hover-effect`}
+                className={`relative bg-white rounded-lg shadow-md border ${isMobile ? 'p-2' : 'p-3'} group cursor-pointer item-hover-effect item-card`}
                 style={getItemAnimationStyle(index)}
                 onMouseEnter={() => setHoveredItem(item.id)}
                 onMouseLeave={() => setHoveredItem(null)}
-                onClick={() => handleWhatsAppRedirect(item)}
+                onClick={() => handleItemClick(item)}
               >
                 {/* Stock Label */}
                 <div className="absolute top-2 left-2 flex flex-col space-y-1 z-10">
@@ -328,25 +362,33 @@ const UserMain = ({ category }) => {
                   )}
                 </div>
                 <div className="absolute top-2 right-2 flex flex-col space-y-1 z-10">
-                   {/* NEW Badge */}
-                {item.isNew && (
-                  <span className="bg-purple-500 text-white text-xs px-1.5 py-0.5 rounded-sm font-medium">
-                    NEW
-                  </span>
-                )}
+                  {/* NEW Badge */}
+                  {item.isNew && (
+                    <span className="bg-purple-500 text-white text-xs px-1.5 py-0.5 rounded-sm font-medium">
+                      NEW
+                    </span>
+                  )}
                 </div>
                
-                {/* Product Image */}
+                {/* Product Image with Hover Effect */}
                 <div className="relative w-full pt-[100%] bg-gray-100 overflow-hidden rounded">
                   <img
                     src={item.imageUrl}
                     alt={item.name}
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                    className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300 image-primary"
                   />
+                  {item.imageUrl2 && (
+                    <img
+                      src={item.imageUrl2}
+                      alt={`${item.name} alternate view`}
+                      className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300 image-secondary transform scale-110"
+                    />
+                  )}
+                  
                   {/* Hover Overlay - Desktop only */}
                   {!isMobile && hoveredItem === item.id && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 text-white font-bold text-lg">
-                      Want to Buy?
+                      View Details
                     </div>
                   )}
                 </div>
@@ -375,22 +417,132 @@ const UserMain = ({ category }) => {
                   </div>
                 </div>
                 
-                {/* WhatsApp Button - Desktop only (mobile entire card is clickable) */}
+                {/* View Details Button - Desktop only */}
                 {!isMobile && (
                   <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button 
-                      className="w-full bg-green-500 hover:bg-green-600 text-white py-1.5 rounded-md text-sm font-medium transition-colors flex items-center justify-center"
+                      className="w-full bg-indigo-500 hover:bg-indigo-600 text-white py-1.5 rounded-md text-sm font-medium transition-colors flex items-center justify-center"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 mr-1">
-                        <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM17 15.5C16.5 16 15.5 16.5 14.5 16.5C13.5 16.5 11 15.5 10 14.5C8.5 13.5 7 11.5 6.5 10C6 8.5 6.5 7.5 7 7C7.5 6.5 8 6 8.5 6.5C9 7 10 9 10 9.5C10 10 9.5 10.5 9.5 11C9.5 11.5 11.5 13.5 12 13.5C12.5 13.5 13 13 13.5 13C14 13 16 12 16.5 12.5C17 13 16.5 15 17 15.5Z" />
-                      </svg>
-                      Buy on WhatsApp
+                      View Details
                     </button>
                   </div>
                 )}
               </div>
             );
           })}
+        </div>
+      )}
+      
+      {/* Enhanced Product Modal */}
+      {modalOpen && selectedItem && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg w-full max-w-lg shadow-lg">
+            {/* Modal Header */}
+            <div className="flex justify-between items-center p-4 border-b">
+              <h3 className="font-medium text-lg">Product Details</h3>
+              <button 
+                onClick={() => setModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-4">
+              {/* Image Gallery */}
+              <div className="mb-4">
+                {/* Main Product Image */}
+                <div className="w-full h-64 bg-gray-100 rounded-lg overflow-hidden mb-2">
+                  <img 
+                    src={selectedItem[selectedItemImage]} 
+                    alt={selectedItem.name} 
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+                
+                {/* Image Selector */}
+                <div className="flex space-x-2">
+                  <div 
+                    className={`w-16 h-16 rounded-md overflow-hidden cursor-pointer border-2 ${selectedItemImage === 'imageUrl' ? 'border-indigo-500' : 'border-gray-200'}`}
+                    onClick={() => setSelectedItemImage('imageUrl')}
+                  >
+                    <img 
+                      src={selectedItem.imageUrl} 
+                      alt={`${selectedItem.name} main view`} 
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  
+                  {selectedItem.imageUrl2 && (
+                    <div 
+                      className={`w-16 h-16 rounded-md overflow-hidden cursor-pointer border-2 ${selectedItemImage === 'imageUrl2' ? 'border-indigo-500' : 'border-gray-200'}`}
+                      onClick={() => setSelectedItemImage('imageUrl2')}
+                    >
+                      <img 
+                        src={selectedItem.imageUrl2} 
+                        alt={`${selectedItem.name} alternate view`} 
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {/* Product Details */}
+              <div className="mb-4">
+                <h2 className="text-xl font-medium mb-2">{selectedItem.name}</h2>
+                
+                {/* Price Details */}
+                <div className="mb-3">
+                  {selectedItem.discount > 0 ? (
+                    <div className="flex items-center">
+                      <span className="text-xl font-bold text-gray-800">
+                        ₹{(selectedItem.price - (selectedItem.price * (selectedItem.discount / 100))).toFixed(2)}
+                      </span>
+                      <span className="text-sm line-through text-gray-400 ml-2">
+                        ₹{selectedItem.price.toFixed(2)}
+                      </span>
+                      <span className="ml-2 bg-green-500 text-white text-xs px-1.5 py-0.5 rounded-sm">
+                        {selectedItem.discount}% OFF
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-xl font-bold text-gray-800">₹{selectedItem.price.toFixed(2)}</span>
+                  )}
+                </div>
+                
+                {/* Stock Status */}
+                <div className="mb-3">
+                  <span className={`${getStockLabel(selectedItem.stock).color} text-white text-xs px-2 py-1 rounded inline-block`}>
+                    {getStockLabel(selectedItem.stock).text}
+                  </span>
+                </div>
+                
+                {/* Description */}
+                {selectedItem.description && (
+                  <div className="mb-3 text-sm text-gray-600">
+                    <p>{selectedItem.description}</p>
+                  </div>
+                )}
+              </div>
+              
+              {/* Action Buttons */}
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => setModalOpen(false)}
+                  className="px-4 py-2 border border-gray-300 rounded text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Modify
+                </button>
+                <button
+                  onClick={() => handleWhatsAppRedirect(selectedItem)}
+                  className="px-4 py-2 bg-green-500 rounded text-sm font-medium text-white hover:bg-green-600"
+                >
+                  Interested
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
       

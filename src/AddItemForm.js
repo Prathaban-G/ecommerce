@@ -5,6 +5,8 @@ import { db } from "./firebase";
 const AddItemForm = ({ onClose, selectedCategory, editItem, refreshItems }) => {
   const [name, setName] = useState(editItem ? editItem.name : "");
   const [imageUrl, setImageUrl] = useState(editItem ? editItem.imageUrl : "");
+  
+  const [imageUrl2, setImageUrl2] = useState(editItem ? editItem.imageUrl2 : "");
   const [price, setPrice] = useState(editItem ? editItem.price : "");
   const [rank, setRank] = useState(editItem ? editItem.rank : "");
   const [discount, setDiscount] = useState(editItem ? editItem.discount || 0 : 0);
@@ -18,6 +20,7 @@ const AddItemForm = ({ onClose, selectedCategory, editItem, refreshItems }) => {
     const itemData = { 
       name, 
       imageUrl, 
+        imageUrl2, 
       price: parseFloat(price), 
       rank: parseInt(rank),
       discount: parseFloat(discount) || 0,
@@ -41,6 +44,8 @@ const AddItemForm = ({ onClose, selectedCategory, editItem, refreshItems }) => {
         <h2 className="text-xl font-bold">{editItem ? "Edit Item" : "Add Item"}</h2>
         <input type="text" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} className="border p-2 w-full mt-2" />
         <input type="text" placeholder="Image URL" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} className="border p-2 w-full mt-2" />
+        <input type="text" placeholder="Image URL2" value={imageUrl2} onChange={(e) => setImageUrl2(e.target.value)} className="border p-2 w-full mt-2" />
+       
         <input type="number" placeholder="Price" value={price} onChange={(e) => setPrice(e.target.value)} className="border p-2 w-full mt-2" />
         <input type="number" placeholder="Discount (%)" value={discount} onChange={(e) => setDiscount(e.target.value)} className="border p-2 w-full mt-2" />
         <input type="number" placeholder="Rank" value={rank} onChange={(e) => setRank(e.target.value)} className="border p-2 w-full mt-2" />
