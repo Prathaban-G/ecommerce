@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from './firebase';
-import { ChevronLeft, Filter, X } from 'lucide-react';
+import { ChevronLeft, Filter, X, Grid, LayoutGrid, Columns, Rows } from 'lucide-react';
 
 const UserMain = ({ category }) => {
   const [items, setItems] = useState([]);
@@ -18,7 +18,7 @@ const UserMain = ({ category }) => {
   // New states for modal
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
-  const [selectedItemImage, setSelectedItemImage] = useState('imageUrl'); // Track which image is selected in modal
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0); // Track which image is selected in modal
   
   useEffect(() => {
     // Check if mobile
@@ -83,7 +83,7 @@ const UserMain = ({ category }) => {
   // Function to handle item click and open modal
   const handleItemClick = (item) => {
     setSelectedItem(item);
-    setSelectedItemImage('imageUrl'); // Reset to first image when opening modal
+    setSelectedImageIndex(0); // Reset to first image when opening modal
     setModalOpen(true);
   };
   
@@ -138,34 +138,52 @@ const UserMain = ({ category }) => {
     };
   };
   
-  // Grid Selector Component (Only for Desktop)
+  // Enhanced Grid Selector Component (Only for Desktop)
   const GridSelector = () => {
     const gridOptions = [
-      { value: 3, label: "3×3" },
-      { value: 4, label: "4×4" },
-      { value: 5, label: "5×5" },
-      { value: 6, label: "6×6" }
+      { value: 3, icon: <Columns size={16} />, label: "3×3" },
+      { value: 4, icon: <LayoutGrid size={16} />, label: "4×4" },
+      { value: 5, icon: <Rows size={16} />, label: "5×5" },
+      { value: 6, icon: <Grid size={16} />, label: "6×6" }
     ];
     
     return (
-      <div className="flex space-x-2 items-center">
-        <span className="text-sm text-gray-500 mr-1">View:</span>
+      <div className="flex space-x-2 items-center bg-gray-100 p-1 rounded-md">
+        <span className="text-xs text-gray-500 ml-2 mr-1 hidden md:inline">Layout:</span>
         {gridOptions.map((option) => (
           <button
             key={option.value}
             onClick={() => setGridColumns(option.value)}
-            className={`w-10 h-8 flex items-center justify-center rounded-md transition-all ${
+            className={`flex items-center justify-center rounded-md transition-all px-3 py-1.5 ${
               gridColumns === option.value 
                 ? "bg-indigo-500 text-white shadow-md" 
-                : "bg-gray-100 hover:bg-gray-200 text-gray-600"
+                : "hover:bg-gray-200 text-gray-600"
             }`}
             title={`${option.label} grid`}
           >
-            <span className="text-xs font-medium">{option.label}</span>
+            <span className="mr-1">{option.icon}</span>
+            <span className="text-xs font-medium hidden md:inline">{option.label}</span>
           </button>
         ))}
       </div>
     );
+  };
+  
+  // Helper function to get the primary and secondary image URLs
+  const getItemImages = (item) => {
+    if (item.imageUrls && item.imageUrls.length > 0) {
+      // If item has imageUrls array from the new AddItemForm
+      return {
+        primary: item.imageUrls[0] || '',
+        secondary: item.imageUrls[1] || ''
+      };
+    } else {
+      // Fallback to legacy imageUrl and imageUrl2 from old format
+      return {
+        primary: item.imageUrl || '',
+        secondary: item.imageUrl2 || ''
+      };
+    }
   };
   
   return (
@@ -274,7 +292,7 @@ const UserMain = ({ category }) => {
       
       {/* Price Filter Panel */}
       {showFilters && (
-        <div className="bg-gray-50 p-4 rounded-md mb-4 border">
+        <div className="bg-gray-50 p-4 rounded-md mb-4 border animate-fadeIn">
           <h3 className="font-medium mb-2">Price Range</h3>
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
@@ -343,6 +361,7 @@ const UserMain = ({ category }) => {
           {filteredItems.map((item, index) => {
             const discountedPrice = item.price - (item.price * (item.discount / 100));
             const stockInfo = getStockLabel(item.stock);
+            const images = getItemImages(item);
             
             return (
               <div
@@ -373,13 +392,13 @@ const UserMain = ({ category }) => {
                 {/* Product Image with Hover Effect */}
                 <div className="relative w-full pt-[100%] bg-gray-100 overflow-hidden rounded">
                   <img
-                    src={item.imageUrl}
+                    src={images.primary}
                     alt={item.name}
                     className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300 image-primary"
                   />
-                  {item.imageUrl2 && (
+                  {images.secondary && (
                     <img
-                      src={item.imageUrl2}
+                      src={images.secondary}
                       alt={`${item.name} alternate view`}
                       className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300 image-secondary transform scale-110"
                     />
@@ -435,7 +454,7 @@ const UserMain = ({ category }) => {
       
       {/* Enhanced Product Modal */}
       {modalOpen && selectedItem && (
-        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-white rounded-lg w-full max-w-lg shadow-lg">
             {/* Modal Header */}
             <div className="flex justify-between items-center p-4 border-b">
@@ -453,37 +472,68 @@ const UserMain = ({ category }) => {
               <div className="mb-4">
                 {/* Main Product Image */}
                 <div className="w-full h-64 bg-gray-100 rounded-lg overflow-hidden mb-2">
-                  <img 
-                    src={selectedItem[selectedItemImage]} 
-                    alt={selectedItem.name} 
-                    className="w-full h-full object-contain"
-                  />
+                  {selectedItem.imageUrls && selectedItem.imageUrls.length > 0 ? (
+                    <img 
+                      src={selectedItem.imageUrls[selectedImageIndex]} 
+                      alt={selectedItem.name} 
+                      className="w-full h-full object-contain"
+                    />
+                  ) : (
+                    // Fallback to legacy format
+                    <img 
+                      src={selectedImageIndex === 0 ? selectedItem.imageUrl : selectedItem.imageUrl2} 
+                      alt={selectedItem.name} 
+                      className="w-full h-full object-contain"
+                    />
+                  )}
                 </div>
                 
                 {/* Image Selector */}
-                <div className="flex space-x-2">
-                  <div 
-                    className={`w-16 h-16 rounded-md overflow-hidden cursor-pointer border-2 ${selectedItemImage === 'imageUrl' ? 'border-indigo-500' : 'border-gray-200'}`}
-                    onClick={() => setSelectedItemImage('imageUrl')}
-                  >
-                    <img 
-                      src={selectedItem.imageUrl} 
-                      alt={`${selectedItem.name} main view`} 
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  
-                  {selectedItem.imageUrl2 && (
-                    <div 
-                      className={`w-16 h-16 rounded-md overflow-hidden cursor-pointer border-2 ${selectedItemImage === 'imageUrl2' ? 'border-indigo-500' : 'border-gray-200'}`}
-                      onClick={() => setSelectedItemImage('imageUrl2')}
-                    >
-                      <img 
-                        src={selectedItem.imageUrl2} 
-                        alt={`${selectedItem.name} alternate view`} 
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
+                <div className="flex space-x-2 overflow-x-auto py-2 px-1">
+                  {selectedItem.imageUrls && selectedItem.imageUrls.length > 0 ? (
+                    // New format with multiple images
+                    selectedItem.imageUrls.map((imageUrl, idx) => (
+                      imageUrl && (
+                        <div 
+                          key={idx}
+                          className={`w-16 h-16 rounded-md overflow-hidden cursor-pointer border-2 flex-shrink-0 ${selectedImageIndex === idx ? 'border-indigo-500' : 'border-gray-200'}`}
+                          onClick={() => setSelectedImageIndex(idx)}
+                        >
+                          <img 
+                            src={imageUrl} 
+                            alt={`${selectedItem.name} view ${idx + 1}`} 
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )
+                    ))
+                  ) : (
+                    // Legacy format with imageUrl and imageUrl2
+                    <>
+                      <div 
+                        className={`w-16 h-16 rounded-md overflow-hidden cursor-pointer border-2 ${selectedImageIndex === 0 ? 'border-indigo-500' : 'border-gray-200'}`}
+                        onClick={() => setSelectedImageIndex(0)}
+                      >
+                        <img 
+                          src={selectedItem.imageUrl} 
+                          alt={`${selectedItem.name} main view`} 
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      
+                      {selectedItem.imageUrl2 && (
+                        <div 
+                          className={`w-16 h-16 rounded-md overflow-hidden cursor-pointer border-2 ${selectedImageIndex === 1 ? 'border-indigo-500' : 'border-gray-200'}`}
+                          onClick={() => setSelectedImageIndex(1)}
+                        >
+                          <img 
+                            src={selectedItem.imageUrl2} 
+                            alt={`${selectedItem.name} alternate view`} 
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
@@ -527,13 +577,15 @@ const UserMain = ({ category }) => {
               </div>
               
               {/* Action Buttons */}
-              <div className="grid grid-cols-2 gap-3">
-                
+              <div className="grid grid-cols-1 gap-3">
                 <button
                   onClick={() => handleWhatsAppRedirect(selectedItem)}
-                  className="px-4 py-2 bg-green-500 rounded text-sm font-medium text-white hover:bg-green-600"
+                  className="px-4 py-2 bg-green-500 rounded text-sm font-medium text-white hover:bg-green-600 flex items-center justify-center"
                 >
-                  Interested
+                  <svg viewBox="0 0 32 32" className="w-5 h-5 mr-2 fill-current" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M16.086 0c-8.703 0-15.726 7.023-15.726 15.726 0 3.483 1.109 6.691 3.16 9.306l-2.062 6.129 6.333-2.062c2.485 1.629 5.414 2.547 8.424 2.547 8.703 0 15.726-7.023 15.726-15.726s-7.152-15.92-15.855-15.92zM25.079 22.154c-0.388 1.074-2.255 2.031-3.096 2.148-0.777 0.097-1.746 0.136-2.796-0.136-0.66-0.176-1.475-0.388-2.563-0.816-4.398-1.978-7.297-6.566-7.529-6.875-0.233-0.311-1.862-2.485-1.862-4.749s1.162-3.367 1.589-3.871c0.427-0.427 0.894-0.505 1.201-0.505s0.544 0 0.777 0.019c0.233 0 0.583-0.097 0.894 0.66 0.311 0.777 1.123 2.679 1.201 2.875 0.097 0.194 0.155 0.427 0.039 0.699-0.116 0.272-0.194 0.427-0.388 0.66s-0.388 0.505-0.583 0.777c-0.194 0.233-0.388 0.466-0.194 0.894 0.233 0.427 0.933 1.842 2.019 2.991 1.396 1.434 2.525 1.901 2.913 2.097 0.388 0.194 0.583 0.155 0.816-0.097s0.933-1.083 1.201-1.473c0.272-0.388 0.544-0.311 0.894-0.194 0.388 0.116 2.369 1.123 2.758 1.318 0.388 0.194 0.66 0.294 0.738 0.427 0.077 0.194 0.077 1.085-0.271 2.119z"></path>
+                  </svg>
+                  Contact on WhatsApp
                 </button>
               </div>
             </div>
@@ -574,21 +626,9 @@ const UserMain = ({ category }) => {
           <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h16" />
           </svg>
-          <h3 className="text-xl font-bold text-gray-700 mb-1">Select a Category</h3>
-          <p className="text-gray-500">Please select a category from the sidebar to view items.</p>
+     <h3 className="text-xl font-bold text-gray-700 mb-1">Please select a category</h3>
+          <p className="text-gray-500">Choose a category from the left menu to view products.</p>
         </div>
-      )}
-      
-      {/* Scroll to Top Button */}
-      {!isLoading && filteredItems.length > 12 && (
-        <button 
-          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="fixed bottom-6 right-6 bg-white shadow-md rounded-full p-3 hover:bg-gray-100 transition-colors"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-          </svg>
-        </button>
       )}
     </div>
   );

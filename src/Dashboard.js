@@ -103,13 +103,15 @@ const Dashboard = () => {
       </button>
 
       {/* Add/Edit Category Form */}
-      {showCategoryForm && (
-        <AddCategoryForm
-          onClose={() => { setShowCategoryForm(false); setEditingCategory(null); }}
-          onAddCategory={handleAddCategory}
-          initialData={editingCategory} // Pass existing data when editing
-        />
-      )}
+     {showItemForm && (
+  <AddItemForm
+    onClose={() => setShowItemForm(false)}
+    selectedCategory={selectedCategory}
+    editItem={editingItem}
+    refreshItems={fetchCategories} // Already correct
+  />
+)}
+
 
       {/* Add/Edit Item Form */}
       {showItemForm && <AddItemForm onClose={() => setShowItemForm(false)} selectedCategory={selectedCategory} editItem={editingItem} refreshItems={() => fetchCategories()} />}

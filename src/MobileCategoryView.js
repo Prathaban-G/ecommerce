@@ -12,7 +12,7 @@ const MobileCategoryView = ({ categories, onSelectCategory, selectedCategory }) 
   // Modal states
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
-  const [selectedItemImage, setSelectedItemImage] = useState('imageUrl'); // Track which image is selected in modal
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   useEffect(() => {
     if (categories.length > 0) {
@@ -81,10 +81,9 @@ const MobileCategoryView = ({ categories, onSelectCategory, selectedCategory }) 
     return { text: "In Stock", color: "bg-green-500" };
   };
 
-  // Function to handle item click and open modal
   const handleItemClick = (item) => {
     setSelectedItem(item);
-    setSelectedItemImage('imageUrl'); // Reset to first image when opening modal
+    setSelectedImageIndex(0); // Always start with the first image
     setModalOpen(true);
   };
 
@@ -201,6 +200,9 @@ const MobileCategoryView = ({ categories, onSelectCategory, selectedCategory }) 
                     {items.map((item) => {
                       const discountedPrice = item.price - (item.price * (item.discount / 100));
                       const stockInfo = getStockLabel(item.stock);
+                      // Get primary and secondary images from imageUrls array
+                      const primaryImage = item.imageUrls && item.imageUrls.length > 0 ? item.imageUrls[0] : '';
+                      const secondaryImage = item.imageUrls && item.imageUrls.length > 1 ? item.imageUrls[1] : '';
                       
                       return (
                         <div
@@ -226,13 +228,13 @@ const MobileCategoryView = ({ categories, onSelectCategory, selectedCategory }) 
                           {/* Product Image with Hover Effect */}
                           <div className="w-full h-32 bg-gray-100 rounded-md overflow-hidden relative">
                             <img
-                              src={item.imageUrl}
+                              src={primaryImage}
                               alt={item.name}
                               className="w-full h-full object-cover transition-opacity duration-300 absolute image-primary"
                             />
-                            {item.imageUrl2 && (
+                            {secondaryImage && (
                               <img
-                                src={item.imageUrl2}
+                                src={secondaryImage}
                                 alt={`${item.name} alternate view`}
                                 className="w-full h-full object-cover transition-opacity duration-300 opacity-0 absolute image-secondary transform scale-105"
                               />
@@ -311,38 +313,32 @@ const MobileCategoryView = ({ categories, onSelectCategory, selectedCategory }) 
                 {/* Main Product Image */}
                 <div className="w-full h-64 bg-gray-100 rounded-lg overflow-hidden mb-2">
                   <img 
-                    src={selectedItem[selectedItemImage]} 
+                    src={selectedItem.imageUrls && selectedItem.imageUrls.length > selectedImageIndex ? 
+                      selectedItem.imageUrls[selectedImageIndex] : ''}
                     alt={selectedItem.name} 
                     className="w-full h-full object-contain"
                   />
                 </div>
                 
                 {/* Image Selector */}
-                <div className="flex space-x-2">
-                  <div 
-                    className={`w-16 h-16 rounded-md overflow-hidden cursor-pointer border-2 ${selectedItemImage === 'imageUrl' ? 'border-blue-500' : 'border-gray-200'}`}
-                    onClick={() => setSelectedItemImage('imageUrl')}
-                  >
-                    <img 
-                      src={selectedItem.imageUrl} 
-                      alt={`${selectedItem.name} main view`} 
-                      className="w-full h-full object-cover"
-                    />
+                {selectedItem.imageUrls && selectedItem.imageUrls.length > 1 && (
+                  <div className="flex space-x-2 overflow-x-auto pb-2">
+                    {selectedItem.imageUrls.map((imageUrl, index) => (
+                      <div 
+                        key={index}
+                        className={`w-16 h-16 rounded-md overflow-hidden cursor-pointer border-2 flex-shrink-0
+                        ${selectedImageIndex === index ? 'border-blue-500' : 'border-gray-200'}`}
+                        onClick={() => setSelectedImageIndex(index)}
+                      >
+                        <img 
+                          src={imageUrl} 
+                          alt={`${selectedItem.name} view ${index + 1}`} 
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ))}
                   </div>
-                  
-                  {selectedItem.imageUrl2 && (
-                    <div 
-                      className={`w-16 h-16 rounded-md overflow-hidden cursor-pointer border-2 ${selectedItemImage === 'imageUrl2' ? 'border-blue-500' : 'border-gray-200'}`}
-                      onClick={() => setSelectedItemImage('imageUrl2')}
-                    >
-                      <img 
-                        src={selectedItem.imageUrl2} 
-                        alt={`${selectedItem.name} alternate view`} 
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  )}
-                </div>
+                )}
               </div>
               
               {/* Product Details */}
@@ -385,12 +381,7 @@ const MobileCategoryView = ({ categories, onSelectCategory, selectedCategory }) 
               
               {/* Action Buttons */}
               <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={() => setModalOpen(false)}
-                  className="px-4 py-2 border border-gray-300 rounded text-sm font-medium text-gray-700 hover:bg-gray-50"
-                >
-                  Modify
-                </button>
+                
                 <button
                   onClick={handleWhatsAppRedirect}
                   className="px-4 py-2 bg-green-500 rounded text-sm font-medium text-white hover:bg-green-600"
