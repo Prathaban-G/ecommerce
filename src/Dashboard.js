@@ -112,6 +112,15 @@ const Dashboard = () => {
   />
 )}
 
+      {/* Add/Edit Category Form */}
+     {showCategoryForm && (
+  <AddCategoryForm
+    onClose={() => setShowCategoryForm(false)}]
+    editItem={editingItem}
+    refreshItems={fetchCategories} // Already correct
+  />
+)}
+
 
       {/* Add/Edit Item Form */}
       {showItemForm && <AddItemForm onClose={() => setShowItemForm(false)} selectedCategory={selectedCategory} editItem={editingItem} refreshItems={() => fetchCategories()} />}
